@@ -1,0 +1,85 @@
+apply plugin: 'java'
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+sourceSets {
+    annotations {
+        java {
+            srcDirs = ['src/annotations']
+            output.classesDir = 'build/annotations'
+        }
+    }
+
+    classes {
+        compileClasspath += annotations.output
+        compileClasspath += main.output
+        java {
+            srcDirs = ['src/classes']
+            output.classesDir = 'build/classes'
+        }
+    }
+
+    examples {
+        compileClasspath += main.output
+        java {
+            srcDirs = ['src/examples']
+            output.classesDir = 'build/examples'
+        }
+    }
+
+    main {
+        compileClasspath += annotations.output
+        java {
+            srcDirs = ['src/main']
+            output.classesDir = 'build/main'
+        }
+    }
+
+    peers {
+        compileClasspath += main.output
+        compileClasspath += annotations.output
+        java {
+            srcDirs = ['src/peers']
+            output.classesDir = 'build/peers'
+        }
+    }
+
+    test {
+        compileClasspath += sourceSets.annotations.output
+        compileClasspath += sourceSets.classes.output
+        compileClasspath += sourceSets.examples.output
+        compileClasspath += sourceSets.main.output
+        compileClasspath += sourceSets.peers.output
+        java {
+            srcDirs = ['src/tests']
+            output.classesDir = 'build/tests'
+        }
+    }
+}
+
+//task test(overwrite: true, type: Test) {
+test {
+    outputs.upToDateWhen { false }
+    scanForTestClasses = false
+    include '**/*Test.*'
+    exclude '**/JPF_*.class'
+    exclude '**/SplitInputStreamTest.class'
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+    reports {
+        html.enabled = true
+    }
+//    classpath = sourceSets.test.output
+}
+
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    testCompile 'junit:junit:4.12'
+}
+
