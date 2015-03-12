@@ -28,7 +28,8 @@ configurations {
     }
 
     jpf {
-        extendsFrom(jpf_classes)
+        extendsFrom(jpf_annotations)
+        jpf.transitive = false
     }
     runnable {
         transitive = false
@@ -49,6 +50,7 @@ dependencies {
     jpf_annotations project(':annotations')
     jpf_classes project(':classes')
     jpf project(':peers')
+    jpf project(':main')
     runnable project(':main')
 }
 
@@ -65,8 +67,6 @@ sourceSets {
         java {
             compileClasspath += sourceSets.examples.output
             runtimeClasspath += jar.outputs.files
-            println 'runtime'
-            runtimeClasspath.each { println it }
             srcDirs = ['src/tests']
             output.classesDir = 'build/tests'
         }
@@ -102,6 +102,16 @@ task jpf_classes(type: Jar) {
     from {
         configurations.jpf_classes.collect({ zipTree(it) })
     }
+    from zipTree(configurations.runnable.singleFile).matching {
+        //we need this one in case a SUT uses the Verify API
+        include 'gov/nasa/jpf/vm/Verify.class',
+                //these are required if we run TestJPF derived test classes
+                'gov/nasa/jpf/JPFShell.class',
+                'gov/nasa/jpf/util/TypeRef.class',
+                'gov/nasa/jpf/util/test/TestJPF.class',
+                'gov/nasa/jpf/util/test/TestMultiProcessJPF.class',
+                'gov/nasa/jpf/util/test/TestJPFHelper.class'
+    }
     baseName = 'jpf-classes'
     with jar
 }
@@ -109,6 +119,13 @@ task jpf_classes(type: Jar) {
 task jpf(type: Jar) {
     from {
         configurations.jpf.collect({ zipTree(it) })
+    }
+    from {
+        configurations.jpf_classes.collect({
+            zipTree(it).matching {
+                include 'org/junit/*.class'
+            }
+        })
     }
     baseName = 'jpf'
     with jar
