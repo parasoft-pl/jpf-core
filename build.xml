@@ -417,10 +417,10 @@
       </not>
     </condition>
     
-    <junit printsummary="on" showoutput="off" 
+    <junit printsummary="yes" showoutput="off"
            haltonfailure="no" logfailedtests="true" failureproperty="test.failed" 
            dir="${basedir}" fork="yes" forkmode="perTest" maxmemory="1024m" outputtoformatters="true">
-      <formatter type="plain" usefile="${junit.usefile}"/>
+      <formatter type="xml" usefile="${junit.usefile}"/>
 
       <assertions>
         <enable/>
@@ -447,7 +447,12 @@
       </batchtest>
 
     </junit>
-
+      <junitreport>
+          <fileset dir="build/tests">
+              <include name="TEST-*.xml" />
+          </fileset>
+          <report format="frames"  todir="build/tests/html" />
+      </junitreport>
     <fail if="test.failed" />
    
   </target>
