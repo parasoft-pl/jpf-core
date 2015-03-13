@@ -18,13 +18,13 @@
 
 package gov.nasa.jpf;
 
+import sun.net.www.protocol.http.Handler;
+
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.Proxy;
 import java.net.URL;
-
-import sun.net.www.protocol.http.Handler;
 
 /**
  * this is just a very rough abstraction at this point, which only supports
