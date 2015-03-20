@@ -1,0 +1,10 @@
+#gradle
+.gradle/
+#build dirs
+build/
+annotations/build/
+classes/build/
+main/build
+peers/build
+#idea
+.idea/
