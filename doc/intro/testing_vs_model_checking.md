@@ -8,7 +8,7 @@ Software testing is an empirical set of techniques where you execute your progra
 
 Testing techniques differ on how we choose the input (random, "interesting" problem domain values like corner cases etc.), and on how much knowledge about the SUT and its execution environment we assume (black/grey/white box), which especially affects how we can define and check correct behavior. This involves a lot of educated guesses, or as Edsger Dijkstra has put it: "program testing can at best show the presence of errors but never their absence". We usually compensate this by performing "enough" tests - which would be the next guess. Testing complex systems can easily turn into finding a needle in a haystack. If you are a good tester, you make the right guesses and hit the defect that is inevitably there. If not, don't worry - your users will find it later.
 
-![Figure 2: Model checking](../graphics/states-mc.png){align=center}
+![Figure 2: Model checking](../graphics/png/states-mc.png){align=center}
 
 [Model Checking](http://en.wikipedia.org/wiki/Model_checking) as a [Formal Method](http://en.wikipedia.org/wiki/Formal_methods) does not depend on guesses. At least as the theory goes, if there is a violation of a given specification, model checking will find it. Model checking is supposed to be a rigorous method that exhaustively explores all possible SUT behaviors. 
 
