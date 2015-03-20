@@ -112,10 +112,6 @@ task jpf_annotations(type: Jar, dependsOn: project(':annotations').assemble) {
     with jar
 }
 
-
-
-
-
 task jpf_classes(type: Jar) {
     from {
         configurations.jpf_classes.collect({ zipTree(it) })
@@ -133,8 +129,6 @@ task jpf_classes(type: Jar) {
     archiveName = 'jpf-classes.jar'
     with jar
 }
-
-
 
 task runJPF(type: Jar) {
     archiveName = 'RunJPF.jar'
@@ -252,6 +246,9 @@ task makeAssemble(type: Copy) {
                 it.archivePath
             }
         }
+    }
+    into('tools') {
+        from { 'tools' }
     }
     into('bin') {
         from { 'bin' }
