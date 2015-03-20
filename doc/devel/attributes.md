@@ -4,12 +4,7 @@ While JPF stores values for operands, local variables and fields very similar to
 
 Note that JPF does not restore attribute object values upon backtracking per default, only attribute references. If you need to make sure attribute values are restored, you have to use copy-on-write and then store back when accessing and modifying such attributes. 
 
--> ![Figure: JPF Attribute System](../graphics/attributes.png)<-{align=center width=650}
-
-<p align="center">
-  <img src="../graphics/attributes.png?raw=true" alt="Figure: JPF Attribute System"/>
-</p>
-Figure: JPF Attribute System
+![Figure: JPF Attribute System](../graphics/attributes.png)
 
 JPF provides an API to set/access these attributes, which is located in `gov.nasa.jpf.vm.Fields` (for field attributes) and `gov.nasa.jpf.vm.StackFrame` (for local variables and operands). Once set, the VM copies the attributes each time it reads/writes the associated field or stackframe slot.
 
