@@ -8,7 +8,7 @@ Even if it is just a Java application (i.e. solely consists of Java classes), JP
 
 Class lookup in both layers is based on the CLASSPATH environment variable / command line parameter, but this should not obfuscate the fact that we have to clearly distinguish between these two modes. In particular, JPF (i.e. the "Model" layer) has its own class and object model, which is completely different and incompatible to the (hidden) class and object models of the underlying host JVM executing JPF
 
-![Figure 1: JPF Layers](../graphics/jpf-layers.svg){align=center width=560}
+![Figure 1: JPF Layers](../graphics/png/jpf-layers.png){align=center width=560}
 
 Each standard JVM supports a so called Java Native Interface (JNI), that is used to delegate execution from the Java level (i.e. JVM controlled bytecode) down into the (platform dependent) native layer (machine code). This is normally used to interface certain functionalities to the platform OS / architecture (e.g. I/O or graphics).
 
@@ -35,7 +35,7 @@ The basic functionality of MJI consists of a mechanism to intercept method invoc
 
 As part of the JPF implementation, MJI automatically takes care of determining which method invocations have to be intercepted by looking up the corresponding native peer methods
 
-![Figure 2: MJI Functions](../graphics/mji-functions.svg){align=center width=600}
+![Figure 2: MJI Functions](../graphics/png/mji-functions.png){align=center width=600}
 
 This would not be very useful without being able to access the JPF object model (or other JPF intrinsics), from inside the native peer methods. Instead of requiring all native peers implementation to reside in a JPF internal package, there exists an interface class `MJIEnv` that provide access to the JPF internal structure in a controlled way. `NativePeer` classes  residing in `gov.nasa.jpf.vm` (i.e. the same package as `MJIEnv`) can reach all internal JPF features. Outside this package, the available API in `MJIEnv` is mostly restricted to the access JPF object (getting and setting values).
 
