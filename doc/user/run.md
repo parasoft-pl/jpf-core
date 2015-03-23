@@ -187,7 +187,7 @@ You can find project examples here
  * Freeform NetBeans project (with user supplied build.xml)
  * standard Eclipse project (with user supplied build.xml)
 
-Please refer to the [Verify API](api) and the [JPF tests](../devel/jpf_tests.md) pages for details about JPF APIs (like `verifyNoPropertyViolation(..)` or `Verify.getInt(min,max)`) you can use within your test classes.
+Please refer to the [Verify API](api.md) and the [JPF tests](../devel/jpf_tests.md) pages for details about JPF APIs (like `verifyNoPropertyViolation(..)` or `Verify.getInt(min,max)`) you can use within your test classes.
 
 Since JPF projects use the same infrastructure for their regression tests, you can find a wealth of examples under the `src/tests` directories of your installed JPF projects. 
 
@@ -247,7 +247,7 @@ public class MyJPFLauncher {
   ...
 ~~~~~~~~ 
 
-Please refer to the [Embedding JPF](../devel/embedded.md) developers documentation for details. If you start JPF through your own launcher application, you have to take care of setting up the required `CLASSPATH` entries so that it finds your (and JPFs) classes, or you can use the generic `gov.nasa.jpf.Main` to load and start your launcher class, which makes use of all the path settings you have in your [site.properties](../install/site-properties) and the directories holding project properties (jpf.properties) referenced therein (details on [how to configure JPF](../user/config). This brings us back to the command line at the top of this page, only that you specify which class should be loaded through `Main`:
+Please refer to the [Embedding JPF](../devel/embedded.md) developers documentation for details. If you start JPF through your own launcher application, you have to take care of setting up the required `CLASSPATH` entries so that it finds your (and JPFs) classes, or you can use the generic `gov.nasa.jpf.Main` to load and start your launcher class, which makes use of all the path settings you have in your [site.properties](../install/site-properties.md) and the directories holding project properties (jpf.properties) referenced therein (details on [how to configure JPF](../user/config.md). This brings us back to the command line at the top of this page, only that you specify which class should be loaded through `Main`:
 
 ~~~~~~~~ {.bash}
 > java -jar .../RunJPF.jar -a MyJPFLauncher ...
