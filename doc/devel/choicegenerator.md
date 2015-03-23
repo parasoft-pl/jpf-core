@@ -16,7 +16,7 @@ boolean b = Verify.getBoolean(); // evaluated by JPF for both `true` and `false`
 
 This worked nicely for small sets of choice values (such as `{true,false}` for boolean), but the mechanism for enumerating all choices from a type specific interval becomes already questionable for large intervals (e.g. `Verify.getInt(0,10000)`), and fails completely if the data type does not allow finite choice sets at all (such as floating point types):
 
-![Figure 1: Motivation behind ChoiceGenerator](../graphics/cg-motivation.svg){align=center width=750}
+![Figure 1: Motivation behind ChoiceGenerator](../graphics/png/cg-motivation.png){align=center width=750}
 
 To handle this case, we have to leave the ideal world of model checking (that considers all possible choices), and make use of what we know about the real world - we have to use heuristics to make the set of choices finite and manageable. However, heuristics are application and domain specific, and it would be a bad idea to hardcode them into the test drivers we give JPF to analyze. This leads to a number of requirements for the JPF choice mechanism:
 
