@@ -38,7 +38,7 @@ a=1
 
 Let's look at a graphical representation of all the ways our program could be executed, and how it actually was executed in our test run. The nodes of the graph represent *program states*, and the edges *transitions* the execution could take from a certain state.
 
-![Figure 1: Random example](../graphics/sw-model-checking.svg){align=center width=700}
+![Figure 1: Random example](../graphics/png/sw-model-checking.png){align=center width=700}
 
 ## Model Checking ##
 
