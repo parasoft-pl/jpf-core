@@ -144,8 +144,8 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
 
     if (cg instanceof ThreadChoiceFromSet) {
       ThreadInfo[] threads = ((ThreadChoiceFromSet)cg).getAllThreadChoices();
-      ElementInfo[eiCandidates = new ElementInfo[threads.length](]);
-      FieldInfo[fiCandidates = new FieldInfo[threads.length](]);
+      ElementInfo[] eiCandidates = new ElementInfo[threads.length()];
+      FieldInfo[] fiCandidates = new FieldInfo[threads.length()];
 
       for (int i=0; i<threads.length; i++) {
         ThreadInfo ti = threads[i];
