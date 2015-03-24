@@ -4,7 +4,7 @@ JPF is different. The VM of JPF and its associated constructs like `ThreadInfo`,
 
 When it comes to executing a bytecode, the VM simply calls the `execute()` method of this `Instruction` instance. The implementation of this method defines the execution semantics.
 
-The trick is now that JPF uses a configurable [abstract factory](http://en.wikipedia.org/wiki/Abstract_factory_pattern.md) to choose and instantiate the `Instruction` classes. By providing your own concrete `InstructionFactory`, together with a set of related `Instruction` classes, you can change the execution semantics of Java.
+The trick is now that JPF uses a configurable [abstract factory](http://en.wikipedia.org/wiki/Abstract_factory_pattern) to choose and instantiate the `Instruction` classes. By providing your own concrete `InstructionFactory`, together with a set of related `Instruction` classes, you can change the execution semantics of Java.
 
 ![Figure: Bytecode Factories](../graphics/png/bc-factory.png){align=center width=850}
 
