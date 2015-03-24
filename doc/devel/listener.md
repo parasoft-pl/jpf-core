@@ -129,7 +129,7 @@ The example shows three aspects that are quite typical:
 
   3. sometimes you have to dig deep into JPF internal constructs, to extract things like `ThreadInfo`, `FieldInfo` and `ChoiceGenerator` instances
 
-~~~~~~~~ {.java}
+```java
 public class PreciseRaceDetector extends PropertyListenerAdapter {
   FieldInfo raceField;
   ...
@@ -191,7 +191,7 @@ public class PreciseRaceDetector extends PropertyListenerAdapter {
     }
   }
 }
-~~~~~~~~
+```
 
 ## Instantiation ##
 
