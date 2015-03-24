@@ -22,7 +22,7 @@ The adapter classes are used for the majority of listener implementations, espec
 
 `PropertyListenerAdapter` is used in case the listener implements a program property, i.e. it can terminate the search process. A prominent example of this category is `PreciseRaceDetector`.
 
-![Figure 2: Listener Types](../graphics/listeners.png){align=center width=800}
+![Figure 2: Listener Types](../graphics/png/listeners.png){align=center width=800}
 
 Choosing the right type for your listener is important, since JPF automatically registers listeners (and properties) based on this type. You can bypass and directly implement single listener interfaces, but then you also have to do the proper registrations.
 
