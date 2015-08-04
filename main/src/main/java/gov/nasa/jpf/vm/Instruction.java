@@ -22,6 +22,7 @@ import gov.nasa.jpf.util.Source;
 import gov.nasa.jpf.vm.bytecode.InstructionInterface;
 
 
+
 /**
  * common root of all JPF bytecode instruction classes 
  * 
@@ -334,7 +335,7 @@ public abstract class Instruction implements Cloneable, InstructionInterface {
    * used in a number of external projects
    */
   public boolean requiresClinitExecution(ThreadInfo ti, ClassInfo ci) {
-    return ci.pushRequiredClinits(ti);
+    return ci.initializeClass(ti);
   }
 
   /**

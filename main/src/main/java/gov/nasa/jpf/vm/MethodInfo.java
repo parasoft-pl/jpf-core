@@ -23,7 +23,6 @@ import gov.nasa.jpf.JPFException;
 import gov.nasa.jpf.util.JPFLogger;
 import gov.nasa.jpf.util.LocationSpec;
 import gov.nasa.jpf.vm.bytecode.ReturnInstruction;
-
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -786,10 +785,7 @@ public String getCompleteName () {
   
   public boolean intersectsLineNumbers( int first, int last){
     if (lineNumbers != null){
-      if ((last < lineNumbers[0]) || (first > lineNumbers[lineNumbers.length-1])){
-        return false;
-      }
-      return true;
+      return !((last < lineNumbers[0]) || (first > lineNumbers[lineNumbers.length - 1]));
     }
     
     return false;
@@ -927,6 +923,11 @@ public String getCompleteName () {
   // overridden by NativeMethodInfo
   public boolean isUnresolvedNativeMethod(){
     return ((modifiers & Modifier.NATIVE) != 0);
+  }
+
+  // overridden by NativeMethodInfo
+  public boolean isJPFExecutable (){
+    return !hasAttr(NoJPFExec.class);
   }
 
   public int getNumberOfArguments () {
@@ -1217,7 +1218,7 @@ public String getCompleteName () {
       for (LocalVarInfo lv : localVars){
         if (lv.hasTypeAnnotations()){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }
@@ -1239,7 +1240,7 @@ public String getCompleteName () {
         AbstractTypeAnnotationInfo tai = lv.getTypeAnnotation(annotationClsName);
         if (tai != null){
           if (list == null){
-            list = new ArrayList<>();
+            list = new ArrayList<LocalVarInfo>();
           }
           list.add(lv);
         }

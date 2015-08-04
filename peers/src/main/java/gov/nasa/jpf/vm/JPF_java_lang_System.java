@@ -71,12 +71,6 @@ public class JPF_java_lang_System extends NativePeer {
     StackFrame frame = ti.getTopFrame();
     ClassInfo ci = ClassLoaderInfo.getSystemResolvedClassInfo("gov.nasa.jpf.ConsoleOutputStream");
 
-    // it's not really used, but it would be hack'ish to use a class whose
-    // super class hasn't been initialized yet
-    if (!ci.isRegistered()) {
-      ci.registerClass(ti);
-    }
-
     if (ci.initializeClass(ti)) {
       env.repeatInvocation();
       return MJIEnv.NULL;
@@ -227,11 +221,11 @@ public class JPF_java_lang_System extends NativePeer {
   /**
    * policy of how to initialize system properties of the system under test
    */
-  static enum SystemPropertyPolicy {
+  enum SystemPropertyPolicy {
     SELECTED,  // copy host values for keys specified in  
     FILE, 
     HOST
-  };
+  }
 
   @MJI
   public int getKeyValuePairs_____3Ljava_lang_String_2 (MJIEnv env, int clsObjRef){

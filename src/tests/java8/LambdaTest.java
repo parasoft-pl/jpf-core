@@ -50,7 +50,7 @@ public class LambdaTest extends TestJPF{
   
   public interface FI2 extends FI1 {
     @Override
-	public String toString();
+    String toString();
   }
   
   @Test
@@ -76,7 +76,7 @@ public class LambdaTest extends TestJPF{
   }
   
   public interface FI3 {
-    public String ret();
+    String ret();
   }
   
   @Test
@@ -95,7 +95,7 @@ public class LambdaTest extends TestJPF{
   }
   
   public interface IncX {
-    public int incX(C o);
+    int incX(C o);
   }
   
   @Test
@@ -165,6 +165,94 @@ public class LambdaTest extends TestJPF{
         
         f2 = f1;
       }
+    }
+  }
+  
+  public static class C2 {
+    public static void throwException() {
+      throw new EnforcedException();
+    }
+  }
+  
+  @Test
+  public void testDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      FI1 fi = C2::throwException;
+      fi.sam();
+    }
+  }
+  
+  static class A {
+    static {
+      if(true) {
+        throw new EnforcedException();
+      }
+    }
+  }
+
+  @Test
+  public void testInitDoubleCloneOperator() {
+    if (verifyUnhandledException(EnforcedException.class.getName())) {
+      new Thread(A::new).start();
+    }
+  }
+  
+  static class D {
+    static final B b = new B();
+  }
+  
+  static class B {
+    static final D a = new D();
+  }
+  
+  @Test
+  public void testClinitDeadlock() {
+    if(verifyDeadlock()) {
+      new Thread(D::new).start();
+      new B();
+    }
+  }
+  
+  @Test
+  public void testLambdaTypeName() {
+    if(verifyNoPropertyViolation()) {
+      Runnable r1 = (A::new);
+      Runnable r2 = (B::new);
+      
+      assertFalse(r1.getClass().getName().equals(r2.getClass().getName()));
+    }
+  }
+  
+  public interface FI {
+    default boolean returnTrue() {
+      return true;
+    }
+    @Override
+    String toString();
+    String toString(int i);
+  }
+  
+  @Test
+  public void testLambdaWithOverridenDefaultMethods() {
+    if(verifyNoPropertyViolation()) {
+      FI fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
+    }
+  }
+  
+  public interface FI4 {
+  }
+  
+  public interface FI5 extends FI {
+    @Override
+    boolean equals(Object obj);
+  }
+  
+  @Test
+  public void testLambdaWithMultipleSuperInterfaces() {
+    if(verifyNoPropertyViolation()) {
+      FI5 fi = (int i) -> {return "output:"+ i;};
+      assertEquals(fi.toString(10),"output:10");
     }
   }
 }

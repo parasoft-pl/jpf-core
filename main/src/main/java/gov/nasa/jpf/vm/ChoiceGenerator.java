@@ -67,6 +67,15 @@ public interface ChoiceGenerator<T> extends Cloneable {
 
   int getProcessedNumberOfChoices();
 
+  
+  // choice getters. Note that not all CGs need to support them since
+  // there is no requirement that CGs compute finite choice sets upon creation
+  
+  T getChoice(int i);
+  T[] getAllChoices();
+  T[] getProcessedChoices();
+  T[] getUnprocessedChoices();
+  
   ChoiceGenerator<?> getPreviousChoiceGenerator();
 
   int getNumberOfParents();
@@ -110,6 +119,10 @@ public interface ChoiceGenerator<T> extends Cloneable {
 
   void setContext(ThreadInfo tiCreator);
 
+  void setStateId (int stateId);
+  
+  int getStateId ();
+  
   String getSourceLocation();
 
   boolean supportsReordering();
@@ -122,7 +135,7 @@ public interface ChoiceGenerator<T> extends Cloneable {
    * Note: this should only be called before the first advance, since it
    * can reset the CG enumeration status
    */
-  ChoiceGenerator<T> reorder(Comparator<T> comparator);
+  ChoiceGenerator<T> reorder (Comparator<T> comparator);
   
   void setPreviousChoiceGenerator(ChoiceGenerator<?> cg);
 

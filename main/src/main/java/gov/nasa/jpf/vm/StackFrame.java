@@ -18,7 +18,16 @@
 package gov.nasa.jpf.vm;
 
 import gov.nasa.jpf.JPFException;
-import gov.nasa.jpf.util.*;
+import gov.nasa.jpf.util.BitSetN;
+import gov.nasa.jpf.util.BitSet1024;
+import gov.nasa.jpf.util.BitSet256;
+import gov.nasa.jpf.util.BitSet64;
+import gov.nasa.jpf.util.FixedBitSet;
+import gov.nasa.jpf.util.HashData;
+import gov.nasa.jpf.util.Misc;
+import gov.nasa.jpf.util.OATHash;
+import gov.nasa.jpf.util.ObjectList;
+import gov.nasa.jpf.util.PrintUtils;
 import gov.nasa.jpf.vm.bytecode.InvokeInstruction;
 
 import java.io.PrintStream;
@@ -490,7 +499,7 @@ public abstract class StackFrame implements Cloneable {
     assert (top >= stackBase);
     
     if ((attrs != null)){
-      return ObjectList.getFirst( attrs[top], attrType);
+      return ObjectList.getFirst(attrs[top], attrType);
     }
     return null;
   }
@@ -595,9 +604,9 @@ public abstract class StackFrame implements Cloneable {
    */
   public <T> T getOperandAttr (int offset, Class<T> attrType){
     int i = top-offset;
-    assert (i >= stackBase);
+    assert (i >= stackBase) : this;
     if (attrs != null){
-      return ObjectList.getFirst( attrs[i], attrType);
+      return ObjectList.getFirst(attrs[i], attrType);
     }
     return null;
   }
@@ -1665,12 +1674,9 @@ public abstract class StackFrame implements Cloneable {
       if (!Misc.compare(top,attrs,other.attrs)){
         return false;
       }
-      
-      if (!ObjectList.equals(frameAttr, other.frameAttr)){
-        return false;
-      }
 
-      return true;
+      return ObjectList.equals(frameAttr, other.frameAttr);
+
     }
 
     return false;

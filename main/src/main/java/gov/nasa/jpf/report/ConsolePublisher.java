@@ -20,7 +20,14 @@ package gov.nasa.jpf.report;
 import gov.nasa.jpf.Config;
 import gov.nasa.jpf.Error;
 import gov.nasa.jpf.util.Left;
-import gov.nasa.jpf.vm.*;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ClassLoaderInfo;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.VM;
+import gov.nasa.jpf.vm.MethodInfo;
+import gov.nasa.jpf.vm.Path;
+import gov.nasa.jpf.vm.Step;
+import gov.nasa.jpf.vm.Transition;
 
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -357,7 +364,7 @@ public class ConsolePublisher extends Publisher {
   // this can be used outside a publisher, to show the same info
   public static void printStatistics (PrintWriter pw, Reporter reporter){
     Statistics stat = reporter.getStatistics();
-    
+
     pw.println("elapsed time:       " + formatHMS(reporter.getElapsedTime()));
     pw.println("states:             new=" + stat.newStates + ",visited=" + stat.visitedStates
             + ",backtracked=" + stat.backtracked + ",end=" + stat.endStates);

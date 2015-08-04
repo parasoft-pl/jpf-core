@@ -17,7 +17,17 @@
  */
 package gov.nasa.jpf.jvm.bytecode;
 
-import gov.nasa.jpf.vm.*;
+import gov.nasa.jpf.vm.BootstrapMethodInfo;
+import gov.nasa.jpf.vm.ClassInfo;
+import gov.nasa.jpf.vm.ElementInfo;
+import gov.nasa.jpf.vm.FunctionObjectFactory;
+import gov.nasa.jpf.vm.Instruction;
+import gov.nasa.jpf.vm.LoadOnJPFRequired;
+import gov.nasa.jpf.vm.MJIEnv;
+import gov.nasa.jpf.vm.StackFrame;
+import gov.nasa.jpf.vm.ThreadInfo;
+import gov.nasa.jpf.vm.Types;
+import gov.nasa.jpf.vm.VM;
 
 /**
  * @author Nastaran Shafiei <nastaran.shafiei@gmail.com>
@@ -95,10 +105,6 @@ public class INVOKEDYNAMIC extends Instruction {
         return ti.getPC();
       }
 
-      if (!fiClassInfo.isRegistered()){
-        fiClassInfo.registerClass(ti);
-      }
-
       if (fiClassInfo.initializeClass(ti)) {
         return ti.getPC();
       }
@@ -110,10 +116,9 @@ public class INVOKEDYNAMIC extends Instruction {
       VM vm = VM.getVM();
       FunctionObjectFactory funcObjFactory = vm.getFunctionObjectFacotry();
       
-      String samUniqueName = samMethodName + bmi.getSamDescriptor();
       Object[] freeVariableValues = frame.getArgumentsValues(ti, freeVariableTypes);
       
-      funcObjRef = funcObjFactory.getFunctionObject(ti, fiClassInfo, samUniqueName, bmi, freeVariableTypeNames, freeVariableValues);
+      funcObjRef = funcObjFactory.getFunctionObject(bootstrapMethodIndex, ti, fiClassInfo, samMethodName, bmi, freeVariableTypeNames, freeVariableValues);
       lastFuncObj = ti.getHeap().get(funcObjRef);
     }
     

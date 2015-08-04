@@ -219,9 +219,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected String classFileUrl;
 
   /** from where the corresponding classfile was loaded (if this is not a builtin) */
-  protected ClassFileContainer container;
+  protected gov.nasa.jpf.vm.ClassFileContainer container;
 
-
+  
   /**
    *  a search global numeric id that is only unique within this ClassLoader namespace. Ids are
    *  computed by the ClassLoaderInfo/Statics implementation during ClassInfo registration
@@ -231,7 +231,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   /**
    * A search global unique id associate with this class, which is comprised of the classLoader id
    * and the (loader-specific) ClassInfo id. This is just a quick way to do search global checks for equality
-   *
+   * 
    * NOTE - since this is based on the classloader-specific id, it can't be used before the ClassInfo is registered
    */
   protected long uniqueId = -1;
@@ -248,13 +248,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected boolean enableAssertions;
 
   /** actions to be taken when an object of this type is gc'ed */
-  protected ImmutableList<ReleaseAction> releaseActions;
-
-
+  protected ImmutableList<ReleaseAction> releaseActions; 
+          
+  
   static boolean init (Config config) {
 
     ClassInfo.config = config;
-
+    
     setSourceRoots(config);
     //buildBCELModelClassPath(config);
 
@@ -283,9 +283,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return ci.isStringClassInfo();
   }
 
-
+  
    //--- initialization interface towards parsers (which might reside in other packages)
-
+    
   protected void setClass(String clsName, String superClsName, int flags, int cpCount) throws ClassParseException {
     String parsedName = Types.getClassNameFromTypeName(clsName);
 
@@ -293,7 +293,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       throw new ClassParseException("wrong class name (expected: " + name + ", found: " + parsedName + ')');
     }
     name = parsedName;
-
+    
     // the enclosingClassName is set on demand since it requires loading enclosing class candidates
     // to verify their innerClass attributes
 
@@ -301,7 +301,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     packageName = (i > 0) ? name.substring(0, i) : "";
 
     modifiers = flags;
-
+    
     // annotations are interfaces too (not exposed by Modifier)
     isClass = ((flags & Modifier.INTERFACE) == 0);
 
@@ -315,15 +315,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setEnclosingClass (String clsName) {
     enclosingClassName = clsName;
   }
-
+  
   public void setEnclosingMethod (String mthName){
-    enclosingMethodName = mthName;
+    enclosingMethodName = mthName;    
   }
 
   public void setInterfaceNames(String[] ifcNames) {
     interfaceNames = ifcNames;
   }
-
+  
   public void setSourceFile (String fileName){
     // prepend if we already know the package
     if (packageName.length() > 0) {
@@ -338,7 +338,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     if (fields == null){
       iFields = EMPTY_FIELDINFO_ARRAY;
       sFields = EMPTY_FIELDINFO_ARRAY;
-
+      
     } else { // there are fields, we have to tell them apart
       int nInstance = 0, nStatic = 0;
       for (int i = 0; i < fields.length; i++) {
@@ -362,6 +362,8 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         } else {
           instanceFields[iInstance++] = fi;
         }
+        
+        processJPFAnnotations(fi);
       }
 
       iFields = instanceFields;
@@ -371,40 +373,81 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     }
   }
 
-  public void setMethods (MethodInfo[] methods) {
-    if (methods != null && methods.length > 0) {
-      HashMap<String, MethodInfo> map = new LinkedHashMap<String, MethodInfo>();
+  protected void setMethod (MethodInfo mi){
+    mi.linkToClass(this);
+    methods.put( mi.getUniqueName(), mi);
+    processJPFAnnotations(mi);
+  }
+  
+  public void setMethods (MethodInfo[] newMethods) {
+    if (newMethods != null && newMethods.length > 0) {
+      methods = new LinkedHashMap<String, MethodInfo>();
 
-      for (int i = 0; i < methods.length; i++) {
-        MethodInfo mi = methods[i];
-        mi.linkToClass(this);
-        map.put(mi.getUniqueName(), mi);
+      for (int i = 0; i < newMethods.length; i++) {
+        setMethod( newMethods[i]);
       }
+    }
+  }
+ 
+  protected void processJPFAttrAnnotation(InfoObject infoObj){
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.JPFAttribute");
+    if (ai != null){
+      String[] attrTypes = ai.getValueAsStringArray();
+      if (attrTypes != null){
+        ClassLoader loader = config.getClassLoader();
 
-      this.methods = map;
+        for (String clsName : attrTypes){
+          try {
+            Class<?> attrCls = loader.loadClass(clsName);
+            Object attr = attrCls.newInstance(); // needs to have a default ctor
+            infoObj.addAttr(attr);
+            
+          } catch (ClassNotFoundException cnfx){
+            logger.warning("attribute class not found: " + clsName);
+            
+          } catch (IllegalAccessException iax){
+            logger.warning("attribute class has no public default ctor: " + clsName);            
+            
+          } catch (InstantiationException ix){
+            logger.warning("attribute class has no default ctor: " + clsName);            
+          }
+        }
+      }
+    }    
+  }
+
+  protected void processNoJPFExecutionAnnotation(InfoObject infoObj) {
+    AnnotationInfo ai = infoObj.getAnnotation("gov.nasa.jpf.annotation.NoJPFExecution");
+    if (ai != null) {
+      infoObj.addAttr(NoJPFExec.SINGLETON);
     }
   }
 
-  public AnnotationInfo getResolvedAnnotationInfo (String typeName){
-    return classLoader.getResolvedAnnotationInfo( typeName);
+  protected void processJPFAnnotations(InfoObject infoObj) {
+    processJPFAttrAnnotation(infoObj);
+    processNoJPFExecutionAnnotation(infoObj);
   }
 
+    public AnnotationInfo getResolvedAnnotationInfo (String typeName){
+    return classLoader.getResolvedAnnotationInfo( typeName);
+  }
+  
   @Override
   public void setAnnotations(AnnotationInfo[] annotations) {
     this.annotations = annotations;
   }
-
+  
   //--- end initialization interface
-
+ 
   //--- the overridden annotation accessors (we need these because of inherited superclass annotations)
   // note that we don't flatten annotations anymore, assuming the prevalent query will be getAnnotation(name)
-
+  
   @Override
   public boolean hasAnnotations(){
     if (annotations.length > 0){
       return true;
     }
-
+    
     for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
       AnnotationInfo[] a = ci.annotations;
       for (int j=0; j<a.length; j++){
@@ -413,10 +456,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         }
       }
     }
-
+    
     return false;
   }
-
+  
   /**
    * return all annotations, which includes the ones inherited from our superclasses
    * NOTE - this is not very efficient
@@ -432,7 +475,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         }
       }
     }
-
+    
     AnnotationInfo[] allAnnotations = new AnnotationInfo[nAnnotations];
     System.arraycopy(annotations, 0, allAnnotations, 0, annotations.length);
     int idx=annotations.length;
@@ -444,10 +487,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         }
       }
     }
-
+    
     return allAnnotations;
   }
-
+    
   @Override
   public AnnotationInfo getAnnotation (String annotationName){
     AnnotationInfo[] a = annotations;
@@ -456,7 +499,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         return a[i];
       }
     }
-
+    
     for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
       a = ci.annotations;
       for (int i=0; i<a.length; i++){
@@ -466,28 +509,28 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         }
       }
     }
-
+    
     return null;
   }
-
+  
   protected ClassInfo (String name, ClassLoaderInfo cli, String classFileUrl){
     nClassInfos++;
-
+    
     this.name = name;
     this.classLoader = cli;
     this.classFileUrl = classFileUrl;
-
+    
     this.methods = NO_METHODS;  // yet
 
     // rest has to be initialized by concrete ctor, which should call resolveAndLink(parser)
   }
-
+  
   /**
    * the initialization part that has to happen once we have super, fields, methods and annotations
    * NOTE - this has to be called by concrete ctors after parsing class files
    */
   protected void resolveAndLink () throws ClassParseException {
-
+    
     //--- these might get streamlined
     isStringClassInfo = isStringClassInfo0();
     isThreadClassInfo = isThreadClassInfo0();
@@ -496,7 +539,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    // isWeakReference = isWeakReference0();
     isAbstract = (modifiers & Modifier.ABSTRACT) != 0;
    // isEnum = isEnum0();
-
+    
     finalizer = getFinalizer0();
 
     resolveClass(); // takes care of super classes and interfaces
@@ -508,18 +551,19 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     checkUnresolvedNativeMethods();
 
     linkFields(); // computes field offsets
-
+    
     setAssertionStatus();
     processJPFConfigAnnotation();
-    loadAnnotationListeners();
+    processJPFAnnotations(this);
+    loadAnnotationListeners();    
   }
-
+  
   protected ClassInfo(){
     nClassInfos++;
-
+    
     // for explicit subclass initialization
   }
-
+  
   /**
    * ClassInfo ctor used for builtin types (arrays and primitive types)
    * idx.e. classes we don't have class files for
@@ -563,50 +607,50 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     enableAssertions = true; // doesn't really matter - no code associated
 
     classFileUrl = name;
-
+    
     // no fields or declaredMethods, so we don't have to link/resolve anything
   }
-
+  
   public static int getNumberOfLoadedClasses(){
     return nClassInfos;
   }
-
+  
   //--- the VM type specific methods
   // <2do> those should be abstract
-
+  
   protected void setAnnotationValueGetterCode (MethodInfo pmi, FieldInfo fi){
     // to be overridden by VM specific class
   }
-
+  
   protected void setDirectCallCode (MethodInfo miCallee, MethodInfo miStub){
     // to be overridden by VM specific class
   }
-
+  
   protected void setLambdaDirectCallCode (MethodInfo miDirectCall, BootstrapMethodInfo bootstrapMethod){
     // to be overridden by VM specific class
   }
-
+  
   protected void setNativeCallCode (NativeMethodInfo miNative){
     // to be overridden by VM specific class
   }
-
+  
   protected void setRunStartCode (MethodInfo miStub, MethodInfo miRun){
     // to be overridden by VM specific class
   }
-
+  
   /**
    * createAndInitialize a fully synthetic implementation of an Annotation proxy
    */
   protected ClassInfo (ClassInfo annotationCls, String name, ClassLoaderInfo classLoader, String url) {
     this.classLoader = classLoader;
-
+    
     this.name = name;
     isClass = true;
 
     //superClass = objectClassInfo;
     superClass = ClassLoaderInfo.getSystemResolvedClassInfo("gov.nasa.jpf.AnnotationProxyBase");
 
-    interfaceNames = new String[]{ annotationCls.name };
+    interfaceNames = new String[]{ annotationCls.name };    
     packageName = annotationCls.packageName;
     sourceFileName = annotationCls.sourceFileName;
     genericSignature = annotationCls.genericSignature;
@@ -635,7 +679,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
       MethodInfo pmi = new MethodInfo(this, mname, mi.getSignature(), Modifier.PUBLIC, 1, 2);
       pmi.setGenericSignature(genericSignature);
-
+      
       setAnnotationValueGetterCode( pmi, fi);
       methods.put(pmi.getUniqueName(), pmi);
     }
@@ -646,13 +690,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     classFileUrl = url;
     linkFields();
   }
-
-
+  
+  
   //used to create synthetic classes that implement functional interfaces
   protected ClassInfo createFuncObjClassInfo (BootstrapMethodInfo bootstrapMethod, String name, String samUniqueName, String[] fieldTypesName) {
    return null;
  }
-
+ 
  protected ClassInfo (ClassInfo funcInterface, BootstrapMethodInfo bootstrapMethod, String name, String[] fieldTypesName) {
    ClassInfo enclosingClass = bootstrapMethod.enclosingClass;
    this.classLoader = enclosingClass.classLoader;
@@ -662,21 +706,21 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
    superClassName = "java.lang.Object";
 
-   interfaceNames = new String[]{ funcInterface.name };
+   interfaceNames = new String[]{ funcInterface.name };    
    packageName = enclosingClass.getPackageName();
 
    // creating fields used to capture free variables
    int n = fieldTypesName.length;
-
+   
    iFields = new FieldInfo[n];
    nInstanceFields = n;
-
+   
    sFields = new FieldInfo[0];
    staticDataSize = 0;
-
+   
    int idx = 0;
    int off = 0;  // no super class
-
+   
    int i = 0;
    for(String type: fieldTypesName) {
      FieldInfo fi = FieldInfo.create("arg" + i++, type, 0);
@@ -684,17 +728,17 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
      iFields[idx++] = fi;
      off += fi.getStorageSize();
    }
-
+   
    linkFields();
  }
-
+  
   // since id and hence uniqueId are not set before this class is registered, we can't use them
-
+  
   @Override
   public int hashCode() {
     return OATHash.hash(name.hashCode(), classLoader.hashCode());
   }
-
+  
   @Override
   public boolean equals (Object o) {
     if (o instanceof ClassInfo) {
@@ -706,7 +750,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
         }
       }
     }
-
+    
     return false;
   }
 
@@ -760,7 +804,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
             String defClsName = aName + "Checker";
             try {
               JPFListener listener = config.getInstance(key, JPFListener.class, defClsName);
-
+              
               JPF jpf = VM.getVM().getJPF(); // <2do> that's a BAD access path
               jpf.addUniqueTypeListener(listener);
 
@@ -786,9 +830,9 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   protected NativePeer loadNativePeer(){
     return NativePeer.getNativePeer(this);
   }
-
+  
   /**
-   * Returns the class loader that
+   * Returns the class loader that 
    */
   public ClassLoaderInfo getClassLoaderInfo() {
     return classLoader;
@@ -800,7 +844,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public Statics getStatics() {
     return classLoader.getStatics();
   }
-
+  
   /**
    * required by InfoObject interface
    */
@@ -833,7 +877,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public void setGenericSignature(String sig){
     genericSignature = sig;
   }
-
+  
   public boolean isArray () {
     return isArray;
   }
@@ -849,7 +893,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   public boolean isBuiltin(){
     return isBuiltin;
   }
-
+  
   public boolean isInterface() {
     return ((modifiers & Modifier.INTERFACE) != 0);
   }
@@ -877,23 +921,23 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       setInitialized(); // we might want to check if there is a clinit
     }
   }
-
+  
   protected ClassInfo createAnnotationProxy (String proxyName){
     // to be overridden by VM specific ClassInfos
     return null;
   }
-
+  
   public ClassInfo getAnnotationProxy (){
     // <2do> test if this is a annotation ClassInfo
-
+    
     checkNoClinitInitialization(); // annotation classes don't have clinits
-
+    
     ClassInfo ciProxy = classLoader.getResolvedAnnotationProxy(this);
     ciProxy.checkNoClinitInitialization();
-
+    
     return ciProxy;
   }
-
+  
 /**
   public static ClassInfo getAnnotationProxy (ClassInfo ciAnnotation){
     ThreadInfo ti = ThreadInfo.getCurrentThread();
@@ -931,7 +975,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   public ElementInfo getClassObject(){
     StaticElementInfo sei = getStaticElementInfo();
-
+    
     if (sei != null){
       int objref = sei.getClassObjectRef();
       return VM.getVM().getElementInfo(objref);
@@ -939,10 +983,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return null;
   }
-
+  
   public ElementInfo getModifiableClassObject(){
     StaticElementInfo sei = getStaticElementInfo();
-
+    
     if (sei != null){
       int objref = sei.getClassObjectRef();
       return VM.getVM().getModifiableElementInfo(objref);
@@ -950,14 +994,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
     return null;
   }
-
+  
 
   public int getClassObjectRef () {
-    StaticElementInfo sei = getStaticElementInfo();
+    StaticElementInfo sei = getStaticElementInfo();    
     return (sei != null) ? sei.getClassObjectRef() : MJIEnv.NULL;
   }
 
-  public ClassFileContainer getContainer(){
+  public gov.nasa.jpf.vm.ClassFileContainer getContainer(){
     return container;
   }
   
@@ -1065,19 +1109,34 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return mi;
   }
   
-  public MethodInfo getInterfaceAbstractMethod (String uniqueName) {
-    MethodInfo mi = this.getMethod(uniqueName, true);
+  /**
+   * This retrieves the SAM from this functional interface. Note that this is only
+   * called on functional interface expecting to have a SAM. This shouldn't expect 
+   * this interface to have only one method which is abstract, since:
+   *    1. functional interface can declare the abstract methods from the java.lang.Object 
+   *       class.
+   *    2. functional interface can extend another interface which is functional, but it 
+   *       should not declare any new abstract methods.
+   *    3. functional interface can have one abstract method and any number of default
+   *       methods.
+   * 
+   * To retrieve the SAM, this method iterates over the methods of this interface and its 
+   * superinterfaces, and it returns the first method which is abstract and it does not 
+   * declare a method in java.lang.Object.
+   */
+  public MethodInfo getInterfaceAbstractMethod () {
+    ClassInfo objCi = ClassLoaderInfo.getCurrentResolvedClassInfo("java.lang.Object");
     
-    if(mi != null) {
-      return mi;
+    for(MethodInfo mi: this.methods.values()) {
+      if(mi.isAbstract() && objCi.getMethod(mi.getUniqueName(), false)==null) {
+        return mi;
+      }
     }
     
-    for (ClassInfo ci = this; ci != null && mi == null; ci = ci.superClass){
-      for (ClassInfo ciIfc : ci.interfaces){
-        mi = ciIfc.getMethod(uniqueName, true);
-        if (mi != null && mi.isAbstract()){
-          return mi;
-        }
+    for (ClassInfo ifc : this.interfaces){
+      MethodInfo mi = ifc.getInterfaceAbstractMethod();
+      if(mi!=null) {
+        return mi;
       }
     }
     
@@ -1410,6 +1469,14 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
       return null;
     }
   }
+
+  public int getNumberOfSuperClasses(){
+    int n = 0;
+    for (ClassInfo ci = superClass; ci != null; ci = ci.superClass){
+      n++;
+    }
+    return n;
+  }
   
   /**
    * beware - this loads (but not yet registers) the enclosing class
@@ -1626,8 +1693,6 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
 
   /**
    * Loads the ClassInfo for named class.
-   * @param set a Set to which the interface names (String) are added
-   * @param ifcs class to find interfaceNames for.
    */
   void loadInterfaceRec (Set<ClassInfo> set, String[] interfaces) throws ClassInfoException {
     if (interfaces != null) {
@@ -1919,15 +1984,13 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return false;
   }
 
+  /**
+   * see getInitializedClassInfo() for restrictions.
+   */
   public static ClassInfo getInitializedSystemClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo systemLoader = ClassLoaderInfo.getCurrentSystemClassLoader();
     ClassInfo ci = systemLoader.getResolvedClassInfo(clsName);
-
-    ci.registerClass(ti); // this is safe to call on already loaded classes
-
-    if (ci.initializeClass(ti)) {
-      throw new ClinitRequired(ci);
-    }
+    ci.initializeClassAtomic(ti);
 
     return ci;
   }
@@ -1939,7 +2002,10 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
    */
   public static ClassInfo getInitializedClassInfo (String clsName, ThreadInfo ti){
     ClassLoaderInfo cl = ClassLoaderInfo.getCurrentClassLoader();
-    return cl.getInitializedClassInfo(clsName, ti);
+    ClassInfo ci = cl.getResolvedClassInfo(clsName);
+    ci.initializeClassAtomic(ti);
+
+    return ci;
   }
 
   public boolean isRegistered () {
@@ -2091,9 +2157,16 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
     return (!isObjectClassInfo() && superClass != null);
   }
 
-  public boolean needsInitialization () {
+  public boolean needsInitialization (ThreadInfo ti){
     StaticElementInfo sei = getStaticElementInfo();
-    return ((sei == null) || (sei.getStatus() > INITIALIZED));
+    if (sei != null){
+      int status = sei.getStatus();
+      if (status == INITIALIZED || status == ti.getId()){
+        return false;
+      }
+    }
+
+    return true;
   }
 
   public void setInitializing(ThreadInfo ti) {
@@ -2102,56 +2175,52 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
   
   /**
-   * check if this class requires clinit execution. If so,
-   * push the corresponding DirectCallStackFrames.
-   * 
-   * clients have to be aware of that frames might get pushed
-   * and properly handle re-execution
-   */
-  public boolean pushRequiredClinits (ThreadInfo ti){
-    StaticElementInfo sei = getStaticElementInfo();    
-    if (sei == null) {
-      sei = registerClass(ti);
-    }
-
-    return initializeClass(ti); // indicates if we pushed clinits
-  }
-    
-  public void setInitialized() {
-    StaticElementInfo sei = getModifiableStaticElementInfo();
-    sei.setStatus(INITIALIZED);
-
-    // we don't emit classLoaded() notifications for non-builtin classes
-    // here anymore because it would be confusing to get instructionExecuted()
-    // notifications from the <clinit> execution before the classLoaded()
-  }
-
-  /**
-   * perform static initialization of class
-   * this recursively initializes all super classes, but NOT the interfaces
+   * initialize this class and its superclasses (but not interfaces)
+   * this will cause execution of clinits of not-yet-initialized classes in this hierarchy
    *
-   * @param ti executing thread
-   * @return  true if clinit stackframes were pushed, idx.e. context instruction
-   * needs to be re-executed
+   * note - we don't treat registration/initialization of a class as
+   * a sharedness-changing operation since it is done automatically by
+   * the VM and the triggering action in the SUT (e.g. static field access or method call)
+   * is the one that should update sharedness and/or break the transition accordingly
+   *
+   * @return true - if initialization pushed DirectCallStackFrames and caller has to re-execute
    */
-  public boolean initializeClass (ThreadInfo ti) {
+  public boolean initializeClass(ThreadInfo ti){
     int pushedFrames = 0;
 
     // push clinits of class hierarchy (upwards, since call stack is LIFO)
     for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
-      if (ci.pushClinit(ti)) {
-        
-        // note - we don't treat registration/initialization of a class as
-        // a sharedness-changing operation since it is done automatically by
-        // the VM and the triggering action in the SUT (e.g. static field access or method call)
-        // is the one that should update sharedness and/or break the transition accordingly
-        
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
+
+      int status = sei.getStatus();
+      if (status != INITIALIZED){
         // we can't do setInitializing() yet because there is no global lock that
         // covers the whole clinit chain, and we might have a context switch before executing
         // a already pushed subclass clinit - there can be races as to which thread
         // does the static init first. Note this case is checked in INVOKECLINIT
         // (which is one of the reasons why we have it).
-        pushedFrames++;
+
+        if (status != ti.getId()) {
+          // even if it is already initializing - if it does not happen in the current thread
+          // we have to sync, which we do by calling clinit
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.pushFrame( frame);
+            pushedFrames++;
+
+          } else {
+            // it has no clinit, we can set it initialized
+            ci.setInitialized();
+          }
+        } else {
+          // ignore if it's already being initialized  by our own thread (recursive request)
+        }
+      } else {
+        break; // if this class is initialized, so are its superclasses
       }
     }
 
@@ -2159,33 +2228,42 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   /**
-   * local class initialization
-   * @return true if we pushed a &lt;clinit&gt; frame
+   * use this with care since it will throw a JPFException if we encounter a choice point
+   * during execution of clinits
+   * Use this mostly for wrapper exceptions and other system classes that are guaranteed to load
    */
-  protected boolean pushClinit (ThreadInfo ti) {
-    StaticElementInfo sei = getStaticElementInfo();
-    int stat = sei.getStatus();
-    
-    if (stat != INITIALIZED) {
-      if (stat != ti.getId()) {
-        // even if it is already initializing - if it does not happen in the current thread
-        // we have to sync, which we do by calling clinit
-        MethodInfo mi = getMethod("<clinit>()V", false);
-        if (mi != null) {
-          DirectCallStackFrame frame = createDirectCallStackFrame(ti, mi, 0);
-          ti.pushFrame( frame);
-          return true;
+  public void initializeClassAtomic (ThreadInfo ti){
+    for (ClassInfo ci = this; ci != null; ci = ci.getSuperClass()) {
+      StaticElementInfo sei = ci.getStaticElementInfo();
+      if (sei == null){
+        sei = ci.registerClass(ti);
+      }
 
-        } else {
-          // it has no clinit, so it already is initialized
-          setInitialized();
-        }
+      int status = sei.getStatus();
+      if (status != INITIALIZED && status != ti.getId()){
+          MethodInfo mi = ci.getMethod("<clinit>()V", false);
+          if (mi != null) {
+            DirectCallStackFrame frame = ci.createDirectCallStackFrame(ti, mi, 0);
+            ti.executeMethodAtomic(frame);
+          } else {
+            ci.setInitialized();
+          }
       } else {
-        // ignore if it's already being initialized  by our own thread (recursive request)
+        break; // if this class is initialized, so are its superclasses
       }
     }
+  }
 
-    return false;
+  public void setInitialized() {
+    StaticElementInfo sei = getStaticElementInfo();
+    if (sei != null && sei.getStatus() != INITIALIZED){
+      sei = getModifiableStaticElementInfo();
+      sei.setStatus(INITIALIZED);
+
+      // we don't emit classLoaded() notifications for non-builtin classes
+      // here anymore because it would be confusing to get instructionExecuted()
+      // notifications from the <clinit> execution before the classLoaded()
+    }
   }
 
   public StaticElementInfo getStaticElementInfo() {
@@ -2389,24 +2467,15 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected boolean isObjectClassInfo0 () {
-	if (name.equals("java.lang.Object")) {
-	  return true;
-	}
-	return false;
+    return name.equals("java.lang.Object");
   }
 
   protected boolean isStringClassInfo0 () {
-    if(name.equals("java.lang.String")) {
-      return true;
-    }
-    return false;
+    return name.equals("java.lang.String");
   }
 
   protected boolean isRefClassInfo0 () {
-    if(name.equals("java.lang.ref.Reference")) {
-      return true;
-    }
-    return false;
+    return name.equals("java.lang.ref.Reference");
   }
 
   protected boolean isWeakReference0 () {
@@ -2438,10 +2507,7 @@ public class ClassInfo extends InfoObject implements Iterable<MethodInfo>, Gener
   }
 
   protected boolean isThreadClassInfo0 () {
-    if(name.equals("java.lang.Thread")) {
-      return true;
-    }
-    return false;
+    return name.equals("java.lang.Thread");
   }
 
 

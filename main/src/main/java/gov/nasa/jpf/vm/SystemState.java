@@ -264,6 +264,10 @@ public class SystemState {
   public void setId (int newId) {
     id = newId;
     trail.setStateId(newId);
+    
+    if (nextCg != null){
+      nextCg.setStateId(newId);
+    }
   }
 
   public void recordSteps (boolean cond) {
@@ -704,8 +708,8 @@ public class SystemState {
    * in case the initialization does not produce a next choice and we have to
    * backtrack.
    *
-   * @see gov.nasa.jpf.vm.VM.forward()
-   *
+   * @see VM.forward()
+   * 
    * @return 'true' if there is a next choice, i.e. a next transition to enter.
    * 'false' if there is no next choice and the system has to backtrack
    */
@@ -721,7 +725,7 @@ public class SystemState {
     }
 
     restorers = null;
-
+    
     // 'nextCg' got set at the end of the previous transition (or a preceding
     // choiceGeneratorSet() notification).
     // Be aware of that 'nextCg' is only the *last* CG that was registered, i.e.
@@ -747,7 +751,7 @@ public class SystemState {
    * Note this gets called *after* storing the KernelState, i.e. is allowed to
    * modify thread states and fields
    *
-   * @see gov.nasa.jpf.vm.VM.forward()
+   * @see VM.forward()
    */
   public void executeNextTransition (VM vm){
      // do we have a thread context switch? (this sets execThread)
