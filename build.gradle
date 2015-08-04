@@ -218,6 +218,7 @@ test {
     }
     test.dependsOn(distAssemble)
     test.shouldRunAfter distAssemble
+    forkEvery = 1
 }
 
 assemble {
