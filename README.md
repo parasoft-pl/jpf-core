@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/gglab-ps/jpf-core.svg?branch=develop)](https://travis-ci.org/gglab-ps/jpf-core)
+[![Build Status](https://travis-ci.org/parasoft-pl/jpf-core.svg?branch=develop)](https://travis-ci.org/parasoft-pl/jpf-core)
 
 
                           Java PathFinder README
